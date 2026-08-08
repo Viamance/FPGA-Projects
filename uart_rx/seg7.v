@@ -2,7 +2,7 @@ module seg7(
     input clk,
     input rst,
     input [7:0] value,
-    output reg [6:0] seg,      // segment cathodes, active on low
+    output reg [6:0] seg,      // segment cathodes, active on low, remember that seg[6:0] = {g,f,e,d,c,b,a}
     output reg [3:0] an        // digit anodes, active on low
 );
 
