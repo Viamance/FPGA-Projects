@@ -1,6 +1,6 @@
 `timescale 1ns/1ps
 
-module tb;
+module tb();
 
     localparam CLKS_PER_BIT = 8;
 
