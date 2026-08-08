@@ -65,7 +65,7 @@ module tb;
         send_byte(8'h91, 1'b1);
         idle(2);
         send_byte(8'h33, 1'b1);
-        idle(2)
+        idle(2);
 
         $finish;
 
