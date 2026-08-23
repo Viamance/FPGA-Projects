@@ -11,7 +11,8 @@ module top(
 
     wire [7:0] rx_byte;
     wire rx_done, parity_ok, frame_ok;
-    reg  [7:0] display_byte;
+    reg [7:0] display_byte;
+    reg btnU_PS;                  // Check the previous state of btn U
 
     uart_rx #(.CLKS_PER_BIT(868)) receive (
         .clk(clk), .rst(btnC), .rx(RsRx),
@@ -22,7 +23,7 @@ module top(
     uart_tx #(.CLKS_PER_BIT(868)) transmitter (
         .clk(clk),
         .rst(btnC),
-        .tx_start(btnU),
+        .tx_start(btnU & !btnU_PS),
         .tx_byte(rx_byte),
         .tx_bit(RsTx),
         .tx_active(tx_active),
@@ -42,6 +43,13 @@ module top(
         .clk(clk), .rst(btnC), .value(display_byte),
         .seg(seg), .an(an)
     );
+
+    always @(posedge clk) begin
+        btnU_PS <= btnU;
+    end
+
+
+
 
     assign dp = 1'b1;
 
