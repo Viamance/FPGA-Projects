@@ -12,7 +12,7 @@ module sync_fifo #(
     output reg [WIDTH-1:0] rd_data,
 
     output full,
-    output empty,
+    output empty
 );
     localparam ptr_size = $clog2(DEPTH);
 
@@ -26,21 +26,22 @@ module sync_fifo #(
         end
         else if (wr_en & !full) begin
             mem[wr_ptr[ptr_size-1:0]] <= wr_data;
-            wr_ptr++;
+            wr_ptr <= wr_ptr + 1;
         end
     end   
 
     always @(posedge clk) begin         // Read Sequence
         if (rst) begin
             rd_ptr <= 0;
+            rd_data <= 0;
         end
         else if (rd_en & !empty) begin
             rd_data <= mem[rd_ptr[ptr_size-1:0]];
-            rd_ptr++;
+            rd_ptr <= rd_ptr + 1;
         end
     end
 
     assign empty = (wr_ptr == rd_ptr);
-    assign full = ((wr_ptr[ptr_size] != rd_ptr[ptr_size]) && (wr_ptr[ptr_size-1:0] == rd_ptr[ptr_size-1:0]) )
+    assign full = ((wr_ptr[ptr_size] != rd_ptr[ptr_size]) && (wr_ptr[ptr_size-1:0] == rd_ptr[ptr_size-1:0]));
 
 endmodule
