@@ -70,6 +70,12 @@ task write_and_read(input [WIDTH-1:0] data);
     end
 endtask
 
+always @(posedge clk) begin
+    if (full && empty) begin
+        $display("FAIL: FULL AND EMPTY ARE HIGH!!!!");
+        $finish;
+    end
+end
 
 initial begin
         $dumpfile("fifo.vcd"); 
