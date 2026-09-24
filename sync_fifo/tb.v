@@ -39,11 +39,11 @@ task write (input [WIDTH-1:0] data);
         wr_data = data;
         @(negedge clk);
         wr_en = 0;
-        wr_data = 0;      // Bad write check: If 0 is written, we know data is written properly    
+        wr_data = 0;      // Bad write check  
     end
 endtask
 
-task read ();
+task read (input [WIDTH-1:0] expected_read);
     begin
         @(negedge clk);
         rd_en = 1;
@@ -51,7 +51,11 @@ task read ();
         @(negedge clk);
         rd_en = 0;
         @(posedge clk);
-        $display("data read=%2h", rd_data);
+        if (rd_data != expected_read) begin
+            $display("FAIL: Actual read data is different from expected read data!");
+            $finish;
+        end       
+        $display("data read=%2h", dut.rd_data);
     end
 endtask
 
@@ -67,6 +71,7 @@ task write_and_read(input [WIDTH-1:0] data);
         wr_en = 0;
         $display("rd_ptr location=%1h, wr_ptr location=%1h", dut.rd_ptr[dut.ptr_size-1:0], dut.wr_ptr[dut.ptr_size-1:0]);
         $display("mem[0] = %2h, mem[1]=%2h, data read=%2h", dut.mem[0], dut.mem[1], rd_data);
+
     end
 endtask
 
@@ -113,21 +118,32 @@ initial begin
         $display("Successful: No writing to full FIFO");
         $display("Status of FIFO: full = %1h, empty = %1h", full, empty);
         
-        // Now check that FIFO is writing properly
-        read();
-        read();
-        read();
-        read();
+        // Now check that FIFO is reading properly
+        read(8'h33);
+        read(8'h67);
+        read(8'ha4);
+        read(8'haF);
         $display("Status of FIFO: full = %1h, empty = %1h", full, empty);
 
         // Now check that FIFO does not read from an empty fifo (case 2)
-        read();  // Data read should be previous data read.
+        read(8'haF);  // Data read should be previous data read.
 
 
         // Now check that both write and read happens when not empty and not full (case 3)
         $display("rd_ptr location=%1h, wr_ptr location=%1h", dut.rd_ptr[dut.ptr_size-1:0], dut.wr_ptr[dut.ptr_size-1:0]);
         write(8'h54);   // Located at mem[0]
         write_and_read(8'hb4);   // Check that reading from mem[0] while writing to mem[1]
+
+        if (dut.rd_data != 8'h54) begin
+            $display("FAIL: Actual read data is different from expected read data!");
+            $finish;
+        end
+
+        if (dut.mem[1] != 8'hb4) begin
+            $display("FAIL: Data is not written properly");
+            $finish;
+        end
+
 
         // Now check that write succeeds, read ignored when both high, FIFO empty (case 4)
         @(negedge clk);
@@ -136,6 +152,17 @@ initial begin
         @(negedge clk);
         rst = 0;
         write_and_read(8'h3a);
+
+        if (dut.rd_data != 8'h00) begin
+            $display("FAIL: Actual read data is different from expected read data!");
+            $finish;
+        end
+
+        if (dut.mem[0] != 8'h3a) begin
+            $display("FAIL: Data is not written properly");
+            $finish;
+        end
+
 
         // Now check that read succeeds, write ignored when both high, FIFO full (case 5)
         @(negedge clk);
@@ -150,10 +177,21 @@ initial begin
 
         write_and_read(8'he4);   // Should read mem[0] == 8'h33 in this case
 
-        for (integer i = 0; i < DEPTH; i = i + 1)
+        if (dut.rd_data != 8'h33) begin
+            $display("FAIL: Actual data read is different from expected read data!");
+            $finish;
+        end
+
+        for (integer i = 0; i < DEPTH; i = i + 1) begin
             $display("mem[%2h]=%2h", i, dut.mem[i]);  // Check that no output is overwritten
+            if (dut.mem[i] == 8'he4) begin
+                $display("FAIL: Overwritten to a full FIFO!");
+                $finish;
+            end
+        end
 
 
+        $display("ALL TEST CASES PASSED!!!");
         $finish;
 
 end
